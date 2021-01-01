@@ -8,6 +8,15 @@ A simple 32-bit single threaded simulator of the base RISC-V R32VI ISA
 1. Install the [riscv-gnu-toolchain](https://github.com/riscv/riscv-gnu-toolchain)
 2. run `make && ruby riscv.rb program.bin`
 
+### Sample Program:
+```ruby
+main:
+  addi x29, x0, 5
+  addi x30, x0, 37
+  add x31, x30, x29
+
+```
+
 ### Sample Output:
 ```ruby
 $ make && ruby riscv.rb program.bin
