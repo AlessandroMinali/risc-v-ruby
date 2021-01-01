@@ -10,8 +10,7 @@ A simple 32-bit single threaded simulator of the base RISC-V R32VI ISA
 
 ### Sample Output:
 ```ruby
-make && ruby riscv.rb program.bin
-make: `program.bin' is up to date.
+$ make && ruby riscv.rb program.bin
 REGISTERS
 x00:          0 x01:          0 x02:          0 x03:          0 
 x04:          0 x05:          0 x06:          0 x07:          0 
