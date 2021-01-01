@@ -5,7 +5,7 @@ require_relative 'errors'
 
 XLEN = 32
 ILEN = 2**XLEN - 1
-MAX_MEM = 0x8000_0000
+MAX_MEM = (2**XLEN - 1) / 2 + 1
 
 # Registers
 REG = Array.new(32) { 0 }
