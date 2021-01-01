@@ -8,7 +8,7 @@ ILEN = 2**XLEN - 1
 MAX_MEM = (2**XLEN - 1) / 2 + 1
 
 # Registers
-REG = Array.new(32) { 0 }
+REG = Array.new(XLEN) { 0 }
 def REG.[]=(index, value)
   return unless fetch(index) { raise InvalidRegister, "x#{index}" }
 
