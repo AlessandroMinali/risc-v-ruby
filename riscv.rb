@@ -1,5 +1,7 @@
 # frozen_string_literal: true
+
 require_relative 'helpers'
+require_relative 'errors'
 
 XLEN = 32
 ILEN = 2**XLEN - 1
@@ -17,59 +19,6 @@ end
 MEM = [] # rubocop:disable Style/MutableConstant
 def MEM.[](index)
   super || 0 # zero out untouched memory
-end
-
-class InvalidRegister < RuntimeError; end
-class InvalidMemory < RuntimeError; end
-class InvalidJump < RuntimeError; end
-class InvalidOp < RuntimeError
-  def initialize(opcode, funct3, funct7)
-    msg = format('Unsupported op: %#<op>x, funct3: %#<funct3>x, funct7: %#<funct7>x', op: opcode,
-                                                                                      funct3: funct3,
-                                                                                      funct7: funct7)
-    super(msg)
-  end
-end
-
-# load
-def l(size, rs1, imm, sign: false)
-  address = REG.fetch(rs1) + imm
-  valid_memory?(address, size)
-
-  case size
-  when 8
-    value = MEM[address]
-    sign ? signed(value << 24) >> 24 : value
-  when 16
-    value = MEM[address] | (MEM[address + 1] << 8)
-    sign ? signed(value << 16) >> 16 : value
-  when 32
-    MEM[address] | (MEM[address + 1] << 8) | (MEM[address + 2] << 16) | (MEM[address + 3] << 24)
-  else
-    raise InvalidMemory, "Unsupported size: #{size} bits"
-  end
-end
-
-# store
-def s(size, rs2, rs1, imm)
-  address = REG.fetch(rs1) + imm
-  valid_memory?(address, size)
-
-  r2 = REG.fetch(rs2)
-  case size
-  when 8
-    MEM[address] = r2 & 0xff
-  when 16
-    MEM[address] = r2 & 0xff
-    MEM[address + 1] = (r2 >> 8) & 0xff
-  when 32
-    MEM[address] = r2 & 0xff
-    MEM[address + 1] = (r2 >> 8) & 0xff
-    MEM[address + 2] = (r2 >> 16) & 0xff
-    MEM[address + 3] = (r2 >> 24) & 0xff
-  else
-    raise InvalidMemory, "Unsupported size: #{size}"
-  end
 end
 
 program = IO.read(ARGV[0])
