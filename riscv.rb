@@ -1,5 +1,23 @@
 # frozen_string_literal: true
 
+XLEN = 32
+ILEN = 2**XLEN - 1
+MAX_MEM = 0x8000_0000
+
+# Registers
+REG = Array.new(32) { 0 }
+def REG.[]=(index, value)
+  return unless fetch(index) { raise InvalidRegister, "x#{index}" }
+
+  super(index, value & ILEN)
+end
+
+# Memory
+MEM = [] # rubocop:disable Style/MutableConstant
+def MEM.[](index)
+  super || 0 # zero out untouched memory
+end
+
 class InvalidRegister < RuntimeError; end
 class InvalidMemory < RuntimeError; end
 class InvalidJump < RuntimeError; end
@@ -12,10 +30,6 @@ class InvalidOp < RuntimeError
   end
 end
 
-def b2h(str)
-  str.to_i(2).to_s(16)
-end
-
 def signed(num)
   [num].pack('L').unpack1('l')
 end
@@ -25,7 +39,7 @@ def unsigned(num)
 end
 
 def dump_registers
-  REGS.each.with_index do |i, index|
+  REG.each.with_index do |i, index|
     print format('x%02<reg>d: %#10<val>x ', reg: index, val: i)
     print "\n" if ((index + 1) % 4).zero?
   end
@@ -38,7 +52,7 @@ def dump_memory
     i += Array.new(4 - i.size) { 0 } if i.size < 4
     value = i[0] | i[1] << 8 | i[2] << 16 | i[3] << 24
 
-    print format('%#10<mem>x: %#10<val>x ', mem: index * 4, val: value)
+    print format('%#10<mem>x: %#10<val>x ', mem: index + 4, val: value)
     print "\n" if ((index + 1) % 4).zero?
   end
 end
@@ -54,7 +68,7 @@ end
 
 # load
 def l(size, rs1, imm, sign: false)
-  address = REGS.fetch(rs1) + imm
+  address = REG.fetch(rs1) + imm
   valid_memory?(address, size)
 
   case size
@@ -73,10 +87,10 @@ end
 
 # store
 def s(size, rs2, rs1, imm)
-  address = REGS.fetch(rs1) + imm
+  address = REG.fetch(rs1) + imm
   valid_memory?(address, size)
 
-  r2 = REGS.fetch(rs2)
+  r2 = REG.fetch(rs2)
   case size
   when 8
     MEM[address] = r2 & 0xff
@@ -97,21 +111,6 @@ program = IO.read(ARGV[0])
 program_end = program.length
 pc = 0
 
-REGS = Array.new(32) { 0 }
-# interface for fixed array
-def REGS.set(index, value)
-  return unless fetch(index) { raise InvalidRegister, "x#{index}" }
-
-  self[index] = (value & ILEN)
-end
-MEM = [] # rubocop:disable Style/MutableConstant
-def MEM.[](index)
-  super || 0
-end
-MAX_MEM = 0x8000_0000
-XLEN = 32
-ILEN = 2**XLEN - 1
-
 while pc < program_end
   old_pc = pc
   instruction = program[pc...pc + 4].unpack1('l<')
@@ -130,19 +129,19 @@ while pc < program_end
     case funct3
     when 0x0
       # LB
-      REGS.set(rd, l(8, rs1, imm, sign: true))
+      REG[rd] = l(8, rs1, imm, sign: true)
     when 0x1
       # LH
-      REGS.set(rd, l(16, rs1, imm, sign: true))
+      REG[rd] = l(16, rs1, imm, sign: true)
     when 0x2
       # LW
-      REGS.set(rd, l(32, rs1, imm))
+      REG[rd] = l(32, rs1, imm)
     when 0x4
       # LBU
-      REGS.set(rd, l(8, rs1, imm))
+      REG[rd] = l(8, rs1, imm)
     when 0x5
       # LHU
-      REGS.set(rd, l(16, rs1, imm))
+      REG[rd] = l(16, rs1, imm)
     else
       raise InvalidOp.new(opcode, funct3, funct7)
     end
@@ -150,49 +149,49 @@ while pc < program_end
     case funct3
     when 0x0
       # ADDI
-      REGS.set(rd, imm + REGS.fetch(rs1))
+      REG[rd] = imm + REG.fetch(rs1)
     when 0x1
       case funct7
       when 0x0
         # SLLI
         shamt = imm & 0x1f
-        REGS.set(rd, REGS.fetch(rs1) << shamt)
+        REG[rd] = REG.fetch(rs1) << shamt
       else
         raise InvalidOp.new(opcode, funct3, funct7)
       end
     when 0x2
       # SLTI
-      REGS.set(rd, signed(REGS.fetch(rs1)) < signed(imm) ? 1 : 0)
+      REG[rd] = signed(REG.fetch(rs1)) < signed(imm) ? 1 : 0
     when 0x3
       # SLTIU
-      REGS.set(rd, REGS.fetch(rs1) < imm ? 1 : 0)
+      REG[rd] = REG.fetch(rs1) < imm ? 1 : 0
     when 0x4
       # XORI
-      REGS.set(rd, REGS.fetch(rs1) ^ imm)
+      REG[rd] = REG.fetch(rs1) ^ imm
     when 0x5
       shamt = imm & 0x1f
       case funct7
       when 0x0
         # SRLI
-        REGS.set(rd, REGS.fetch(rs1) >> shamt)
+        REG[rd] = REG.fetch(rs1) >> shamt
       when 0x20
         # SRAI
-        REGS.set(rd, signed(REGS.fetch(rs1)) >> shamt)
+        REG[rd] = signed(REG.fetch(rs1)) >> shamt
       else
         raise InvalidOp.new(opcode, funct3, funct7)
       end
     when 0x6
       # ORI
-      REGS.set(rd, REGS.fetch(rs1) | imm)
+      REG[rd] = REG.fetch(rs1) | imm
     when 0x7
       # ANDI
-      REGS.set(rd, REGS.fetch(rs1) & imm)
+      REG[rd] = REG.fetch(rs1) & imm
     else
       raise InvalidOp.new(opcode, funct3, funct7)
     end
   when 0x17
     # AUIPC
-    REGS.set(rd, pc + (instruction & 0xffff_f000))
+    REG[rd] = pc + (instruction & 0xffff_f000)
   when 0x23
     imm = (imm & 0xfe0) | rd
     case funct3
@@ -212,43 +211,43 @@ while pc < program_end
     case [funct3, funct7]
     when [0x0, 0x0]
       # ADD
-      REGS.set(rd, REGS.fetch(rs1) + REGS.fetch(rs2))
+      REG[rd] = REG.fetch(rs1) + REG.fetch(rs2)
     when [0x0, 0x20]
       # SUB
-      REGS.set(rd, REGS.fetch(rs1) - REGS.fetch(rs2))
+      REG[rd] = REG.fetch(rs1) - REG.fetch(rs2)
     when [0x1, 0x0]
       # SLL
-      shamt = REGS.fetch(rs2) & 0x1f
-      REGS.set(rd, REGS.fetch(rs1) << shamt)
+      shamt = REG.fetch(rs2) & 0x1f
+      REG[rd] = REG.fetch(rs1) << shamt
     when [0x2, 0x0]
       # SLT
-      REGS.set(rd, signed(REGS.fetch(rs1)) < signed(REGS.fetch(rs2)) ? 1 : 0)
+      REG[rd] = signed(REG.fetch(rs1)) < signed(REG.fetch(rs2)) ? 1 : 0
     when [0x3, 0x0]
       # SLTU
-      REGS.set(rd, REGS.fetch(rs1) < REGS.fetch(rs2) ? 1 : 0)
+      REG[rd] = REG.fetch(rs1) < REG.fetch(rs2) ? 1 : 0
     when [0x4, 0x0]
       # XOR
-      REGS.set(rd, REGS.fetch(rs1) ^ REGS.fetch(rs2))
+      REG[rd] = REG.fetch(rs1) ^ REG.fetch(rs2)
     when [0x5, 0x0]
       # SRL
-      shamt = REGS.fetch(rs2) & 0x1f
-      REGS.set(rd, REGS.fetch(rs1) >> shamt)
+      shamt = REG.fetch(rs2) & 0x1f
+      REG[rd] = REG.fetch(rs1) >> shamt
     when [0x5, 0x20]
       # SRA
-      shamt = REGS.fetch(rs2) & 0x1f
-      REGS.set(rd, signed(REGS.fetch(rs1)) >> shamt)
+      shamt = REG.fetch(rs2) & 0x1f
+      REG[rd] = signed(REG.fetch(rs1)) >> shamt
     when [0x6, 0x0]
       # OR
-      REGS.set(rd, REGS.fetch(rs1) | REGS.fetch(rs2))
+      REG[rd] = REG.fetch(rs1) | REG.fetch(rs2)
     when [0x7, 0x0]
       # AND
-      REGS.set(rd, REGS.fetch(rs1) & REGS.fetch(rs2))
+      REG[rd] = REG.fetch(rs1) & REG.fetch(rs2)
     else
       raise InvalidOp.new(opcode, funct3, funct7)
     end
   when 0x37
     # LUI
-    REGS.set(rd, instruction & 0xffff_f000)
+    REG[rd] = instruction & 0xffff_f000
   when 0x63
     imm = ((instruction >> 19) & 0xffff_e000) |
           ((instruction & 0x800) << 4) |
@@ -257,22 +256,22 @@ while pc < program_end
     case funct3
     when 0x0
       # BEQ
-      pc += imm if REGS.fetch(rs1) == REGS.fetch(rs2)
+      pc += imm if REG.fetch(rs1) == REG.fetch(rs2)
     when 0x1
       # BNE
-      pc += imm if REGS.fetch(rs1) != REGS.fetch(rs2)
+      pc += imm if REG.fetch(rs1) != REG.fetch(rs2)
     when 0x4
       # BLT
-      pc += imm if signed(REGS.fetch(rs1)) < signed(REGS.fetch(rs2))
+      pc += imm if signed(REG.fetch(rs1)) < signed(REG.fetch(rs2))
     when 0x5
       # BGE
-      pc += imm if signed(REGS.fetch(rs1)) >= signed(REGS.fetch(rs2))
+      pc += imm if signed(REG.fetch(rs1)) >= signed(REG.fetch(rs2))
     when 0x6
       # BLTU
-      pc += imm if REGS.fetch(rs1) < REGS.fetch(rs2)
+      pc += imm if REG.fetch(rs1) < REG.fetch(rs2)
     when 0x7
       # BGEU
-      pc += imm if REGS.fetch(rs1) >= REGS.fetch(rs2)
+      pc += imm if REG.fetch(rs1) >= REG.fetch(rs2)
     else
       raise InvalidOp.new(opcode, funct3, funct7)
     end
@@ -280,8 +279,8 @@ while pc < program_end
     case funct3
     when 0x0
       # JALR
-      REGS.set(rd, pc + 4)
-      pc = (imm + REGS.fetch(rs1)) & ~1
+      REG[rd] = pc + 4
+      pc = (imm + REG.fetch(rs1)) & ~1
     else
       raise InvalidOp.new(opcode, funct3, funct7)
     end
@@ -292,7 +291,7 @@ while pc < program_end
           ((instruction >> 9) & 0x800) |
           ((instruction >> 20) & 0x7fe0)
 
-    REGS.set(rd, pc + 4)
+    REG[rd] = pc + 4
     pc += imm
   else
     raise InvalidOp.new(opcode, funct3, funct7)
@@ -300,7 +299,7 @@ while pc < program_end
 
   raise InvalidJump unless (pc % 4).zero?
 
-  REGS[0] = 0 # hardwire the reg
+  REG[0] = 0 # hardwire the reg
   pc += 4 if old_pc == pc
 end
 
