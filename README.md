@@ -14,6 +14,7 @@ main:
   addi x29, x0, 5
   addi x30, x0, 37
   add x31, x30, x29
+  sw x31, 0(x0)
 
 ```
 
@@ -31,7 +32,7 @@ x24:          0 x25:          0 x26:          0 x27:          0
 x28:          0 x29:        0x5 x30:       0x25 x31:       0x2a 
 
 MEMORY
-
+         0:       0x2a
 ```
 
 You can alter `program.s` to change the executed code.
