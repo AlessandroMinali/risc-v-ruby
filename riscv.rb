@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'options'
 require_relative 'helpers'
 require_relative 'errors'
 
@@ -7,7 +8,7 @@ XLEN = 64
 MAX_MEM = (2**XLEN - 1) / 2 + 1
 
 # Registers
-REG = Array.new(32) { 0 }
+REG = Array.new(OPTIONS[:embedded] ? 16 : 32) { 0 }
 def REG.[]=(index, value)
   return unless fetch(index) { raise InvalidRegister, "x#{index}" }
 
