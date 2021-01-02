@@ -60,7 +60,7 @@ def dump_registers
   end
 end
 
-def dump_memory
+def dump_memory # rubocop:disable Metrics/AbcSize
   size = XLEN / 8
   MEM.each_slice(size).with_index do |i, index|
     next if i.nil?

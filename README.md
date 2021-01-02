@@ -1,7 +1,11 @@
-A simple 32-bit single threaded simulator of the base RISC-V R32VI ISA
+A simple single threaded simulator for RISC-V RV32 ISA
 
 [RISC-V ?](https://en.wikipedia.org/wiki/RISC-V)  
 [ISA ?](https://en.wikipedia.org/wiki/Instruction_set_architecture)
+
+## Supports
+- RV32I
+- RV32E
 
 ## Usage
 
