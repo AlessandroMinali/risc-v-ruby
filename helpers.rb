@@ -74,7 +74,7 @@ def dump_memory
 end
 
 def valid_memory?(address, size)
-  raise InvalidMemory, "0x#{address} must be lass than #{MAX_MEM}" unless address < MAX_MEM
+  raise InvalidMemory, "0x#{address} must be less than #{MAX_MEM}" unless address < MAX_MEM
 
   unless (address % (size / 8)).zero? # rubocop:disable Style/GuardClause
     raise InvalidMemory,
