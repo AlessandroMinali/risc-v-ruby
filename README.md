@@ -4,8 +4,19 @@ A simple single threaded simulator for RISC-V RV32 ISA
 [ISA ?](https://en.wikipedia.org/wiki/Instruction_set_architecture)
 
 ## Supports
-- RV32I
-- RV32E
+- RV32I (default)
+- RV32E (with `-E`)
+
+## Future Support
+- RV32M
+- RV32A
+
+## Maybe Support
+- RV32F
+- RV32D
+- RV32Q
+- RVZicsr
+- RVC
 
 ## Usage
 
