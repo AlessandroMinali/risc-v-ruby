@@ -9,7 +9,7 @@ def signed(num)
 end
 
 def unsigned(num)
-  num & ILEN
+  num & (2**XLEN - 1)
 end
 
 # load
@@ -55,7 +55,7 @@ end
 
 def dump_registers
   REG.each.with_index do |i, index|
-    print format('x%02<reg>d: %#10<val>x ', reg: index, val: i)
+    print format("x%02<reg>d: %##{(XLEN/3.25).round}<val>x ", reg: index, val: i)
     print "\n" if ((index + 1) % 4).zero?
   end
 end
@@ -65,9 +65,10 @@ def dump_memory
     next if i.nil?
 
     i += Array.new(4 - i.size) { 0 } if i.size < 4
+    i.map!(&:to_i)
     value = i[0] | i[1] << 8 | i[2] << 16 | i[3] << 24
 
-    print format('%#10<mem>x: %#10<val>x ', mem: index * 4, val: value)
+    print format("%#10<mem>x: %#10<val>x ", mem: index * 4, val: value)
     print "\n" if ((index + 1) % 4).zero?
   end
 end
