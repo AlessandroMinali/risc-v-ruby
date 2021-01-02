@@ -8,14 +8,7 @@ A simple single threaded simulator for RISC-V RV32 ISA
 - RV32E (with `-E` option)
 - RV32M
 
-## Future Support
-- RV32A
-
 ## Maybe Support
-- RV32F
-- RV32D
-- RV32Q
-- RVZicsr
 - RVC
 
 ## Usage
