@@ -3,7 +3,7 @@
 require_relative 'helpers'
 require_relative 'errors'
 
-XLEN = 32
+XLEN = 64
 MAX_MEM = (2**XLEN - 1) / 2 + 1
 
 # Registers
