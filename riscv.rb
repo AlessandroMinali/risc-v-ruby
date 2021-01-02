@@ -126,6 +126,9 @@ while pc < program_end
     when [0x0, 0x0]
       # ADD
       REG[rd] = REG.fetch(rs1) + REG.fetch(rs2)
+    when [0x0, 0x1]
+      # MUL
+      REG[rd] = REG.fetch(rs1) * REG.fetch(rs2)
     when [0x0, 0x20]
       # SUB
       REG[rd] = REG.fetch(rs1) - REG.fetch(rs2)
@@ -133,19 +136,51 @@ while pc < program_end
       # SLL
       shamt = REG.fetch(rs2) & 0x1f
       REG[rd] = REG.fetch(rs1) << shamt
+    when [0x1, 0x1]
+      # MULH
+      result = signed(REG.fetch(rs1)) * signed(REG.fetch(rs2))
+      REG[rd] = result.bit_length > 32 ? (result >> (result.bit_length - 32)) : result
     when [0x2, 0x0]
       # SLT
       REG[rd] = signed(REG.fetch(rs1)) < signed(REG.fetch(rs2)) ? 1 : 0
+    when [0x2, 0x1]
+      # MULHSU
+      result = signed(REG.fetch(rs1)) * REG.fetch(rs2)
+      REG[rd] = result.bit_length > 32 ? (result >> (result.bit_length - 32)) : result
     when [0x3, 0x0]
       # SLTU
       REG[rd] = REG.fetch(rs1) < REG.fetch(rs2) ? 1 : 0
+    when [0x3, 0x1]
+      # MULHU
+      result = REG.fetch(rs1) * REG.fetch(rs2)
+      REG[rd] = result.bit_length > 32 ? (result >> (result.bit_length - 32)) : result
     when [0x4, 0x0]
       # XOR
       REG[rd] = REG.fetch(rs1) ^ REG.fetch(rs2)
+    when [0x4, 0x1]
+      # DIV
+      r1 = REG.fetch(rs1)
+      r2 = REG.fetch(rs2)
+      if r2.zero?
+        REG[rd] = -1
+        break
+      elsif r2 == -1 && r1 == unsigned(-2**(XLEN - 1))
+        REG[rd] = -2**(XLEN - 1)
+        break
+      end
+      REG[rd] = signed(r1) / signed(r2)
     when [0x5, 0x0]
       # SRL
       shamt = REG.fetch(rs2) & 0x1f
       REG[rd] = REG.fetch(rs1) >> shamt
+    when [0x5, 0x1]
+      # DIVU
+      r2 = REG.fetch(rs2)
+      if r2.zero?
+        REG[rd] = 2**XLEN - 1
+        break
+      end
+      REG[rd] = REG.fetch(rs1) / r2
     when [0x5, 0x20]
       # SRA
       shamt = REG.fetch(rs2) & 0x1f
@@ -153,9 +188,30 @@ while pc < program_end
     when [0x6, 0x0]
       # OR
       REG[rd] = REG.fetch(rs1) | REG.fetch(rs2)
+    when [0x6, 0x1]
+      # REM
+      r1 = REG.fetch(rs1)
+      r2 = REG.fetch(rs2)
+      if r2.zero?
+        REG[rd] = r1
+        break
+      elsif r2 == -1 && r1 == unsigned(-2**(XLEN - 1))
+        REG[rd] = 0
+        break
+      end
+      REG[rd] = signed(r1).remainder(signed(r2))
     when [0x7, 0x0]
       # AND
       REG[rd] = REG.fetch(rs1) & REG.fetch(rs2)
+    when [0x7, 0x1]
+      # REMU
+      r1 = REG.fetch(rs1)
+      r2 = REG.fetch(rs2)
+      if r2.zero?
+        REG[rd] = r1
+        break
+      end
+      REG[rd] = REG.fetch(r1).remainder(REG.fetch(rs2))
     else
       raise InvalidOp.new(opcode, funct3, funct7)
     end
