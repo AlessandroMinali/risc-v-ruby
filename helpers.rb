@@ -62,7 +62,7 @@ end
 
 def dump_memory
   MEM.each_slice(4).with_index do |i, index|
-    next if i.nil?
+    next if i.compact.empty?
 
     i += Array.new(4 - i.size) { 0 } if i.size < 4
     i.map!(&:to_i)
@@ -74,8 +74,6 @@ def dump_memory
 end
 
 def valid_memory?(address, size)
-  raise InvalidMemory, "0x#{address} must be less than #{MAX_MEM}" unless address < MAX_MEM
-
   unless (address % (size / 8)).zero? # rubocop:disable Style/GuardClause
     raise InvalidMemory,
           "0x#{address} is not #{size / 8} byte aligned for #{size} bit access"

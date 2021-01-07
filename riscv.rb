@@ -5,7 +5,7 @@ require_relative 'helpers'
 require_relative 'errors'
 
 XLEN = 32
-MAX_MEM = (2**XLEN - 1) / 2 + 1
+MAX_MEM = 0xffff
 
 # Registers
 REG = Array.new(OPTIONS[:embedded] ? 16 : 32) { 0 }
@@ -16,9 +16,12 @@ def REG.[]=(index, value)
 end
 
 # Memory
-MEM = [] # rubocop:disable Style/MutableConstant
+MEM = Array.new(MAX_MEM)
 def MEM.[](index)
-  super || 0 # zero out untouched memory
+  super(index % (MAX_MEM + 1)) || 0
+end
+def MEM.[]=(index, value)
+  super(index % (MAX_MEM + 1), value)
 end
 
 program = IO.read(ARGV[0])
