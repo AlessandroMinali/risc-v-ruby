@@ -222,10 +222,11 @@ while pc < program_end
     # LUI
     REG[rd] = instruction & 0xffff_f000
   when 0x63
-    imm = ((instruction >> 19) & 0xffff_e000) |
-          ((instruction & 0x800) << 4) |
-          ((instruction >> 20) & 0x7e0) |
-          ((instruction >> 7) & 0x1e)
+    imm = (((instruction & 0xf00) >> 7) & ~1) |
+          ((instruction & 0x7e000000) >> 20) |
+          ((instruction & 0x80) << 4) |
+          (signed(instruction & 0x8000_0000) >> 20)
+
     case funct3
     when 0x0
       # BEQ
@@ -259,10 +260,10 @@ while pc < program_end
     end
   when 0x6f
     # JAL
-    imm = ((instruction >> 11) & 0xffc0_0000) |
-          (instruction & 0xf_f000) |
-          ((instruction >> 9) & 0x800) |
-          ((instruction >> 20) & 0x7fe0)
+    imm = (((instruction & 0x7fe00000) >> 20) & ~1) |
+          ((instruction & 0x100000) >> 9) |
+          (instruction & 0xff000) |
+          (signed(instruction & 0x8000_0000) >> 11)
 
     REG[rd] = pc + 4
     pc += imm
@@ -273,7 +274,11 @@ while pc < program_end
   raise InvalidJump unless (pc % 4).zero?
 
   REG[0] = 0 # hardwire the reg
-  pc += 4 if old_pc == pc
+  if old_pc == pc
+    pc += 4
+  elsif pc.zero? # looped back to beginning or program so quit
+    break
+  end
 end
 
 puts 'REGISTERS'
