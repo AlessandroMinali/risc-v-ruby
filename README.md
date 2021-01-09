@@ -4,7 +4,7 @@ A simple single threaded simulator for RISC-V RV32IM ISA
 [ISA ?](https://en.wikipedia.org/wiki/Instruction_set_architecture)
 
 ## Supports
-- RV32I
+- RV32I (excluding FENCE and ECALL)
 - RV32E (with `-E` option)
 - RV32M
 

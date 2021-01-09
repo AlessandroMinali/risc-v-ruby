@@ -267,6 +267,18 @@ while pc < program_end
 
     REG[rd] = pc + 4
     pc += imm
+  when 0x73
+    case imm
+    when 0x1
+      # EBREAK
+      dump_all
+      puts "BREAKPOINT @ LINENUM #{pc / 4}"
+      puts 'Enter any key to continue execution...'
+
+      $stdin.gets
+    else
+      raise InvalidOp.new(opcode, funct3, funct7)
+    end
   else
     raise InvalidOp.new(opcode, funct3, funct7)
   end
@@ -281,8 +293,4 @@ while pc < program_end
   end
 end
 
-puts 'REGISTERS'
-dump_registers
-puts "\nMEMORY"
-dump_memory
-puts
+dump_all

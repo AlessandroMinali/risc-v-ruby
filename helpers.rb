@@ -73,6 +73,14 @@ def dump_memory
   end
 end
 
+def dump_all
+  puts 'REGISTERS'
+  dump_registers
+  puts "\nMEMORY"
+  dump_memory
+  puts
+end
+
 def valid_memory?(address, size)
   unless (address % (size / 8)).zero? # rubocop:disable Style/GuardClause
     raise InvalidMemory,
